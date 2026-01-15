@@ -1,0 +1,194 @@
+! ========================================
+! CONFIGURATION COMPLETE RESEAU OSPF 3 ROUTEURS + 2 VLANS
+! ========================================
+
+! ========================================
+! ROUTEUR R1
+! ========================================
+enable
+configure terminal
+hostname R1
+no ip domain-lookup
+enable secret cisco123
+
+interface GigabitEthernet0/0
+ description Lien vers R2
+ ip address 10.0.12.1 255.255.255.252
+ no shutdown
+
+interface GigabitEthernet0/1
+ description Lien vers R3
+ ip address 10.0.13.1 255.255.255.252
+ no shutdown
+
+router ospf 1
+ router-id 1.1.1.1
+ network 10.0.12.0 0.0.0.3 area 0
+ network 10.0.13.0 0.0.0.3 area 0
+
+line console 0
+ password console123
+ login
+ logging synchronous
+
+line vty 0 4
+ password vty123
+ login
+
+end
+copy running-config startup-config
+
+
+! ========================================
+! ROUTEUR R2
+! ========================================
+enable
+configure terminal
+hostname R2
+no ip domain-lookup
+enable secret cisco123
+
+interface GigabitEthernet0/0
+ description Lien vers R1
+ ip address 10.0.12.2 255.255.255.252
+ no shutdown
+
+interface GigabitEthernet0/1
+ description Lien vers R3
+ ip address 10.0.23.1 255.255.255.252
+ no shutdown
+
+router ospf 1
+ router-id 2.2.2.2
+ network 10.0.12.0 0.0.0.3 area 0
+ network 10.0.23.0 0.0.0.3 area 0
+
+line console 0
+ password console123
+ login
+ logging synchronous
+
+line vty 0 4
+ password vty123
+ login
+
+end
+copy running-config startup-config
+
+
+! ========================================
+! ROUTEUR R3
+! ========================================
+enable
+configure terminal
+hostname R3
+no ip domain-lookup
+enable secret cisco123
+
+interface GigabitEthernet0/0
+ description Lien vers R1
+ ip address 10.0.13.2 255.255.255.252
+ no shutdown
+
+interface GigabitEthernet0/1
+ description Lien vers R2
+ ip address 10.0.23.2 255.255.255.252
+ no shutdown
+
+interface GigabitEthernet0/2
+ description Trunk vers Switch
+ no shutdown
+
+interface GigabitEthernet0/2.10
+ description VLAN 10 - Administratif
+ encapsulation dot1Q 10
+ ip address 192.168.10.1 255.255.255.0
+
+interface GigabitEthernet0/2.20
+ description VLAN 20 - Technique
+ encapsulation dot1Q 20
+ ip address 192.168.20.1 255.255.255.0
+
+router ospf 1
+ router-id 3.3.3.3
+ network 10.0.13.0 0.0.0.3 area 0
+ network 10.0.23.0 0.0.0.3 area 0
+ network 192.168.10.0 0.0.0.255 area 0
+ network 192.168.20.0 0.0.0.255 area 0
+ passive-interface GigabitEthernet0/2.10
+ passive-interface GigabitEthernet0/2.20
+
+line console 0
+ password console123
+ login
+ logging synchronous
+
+line vty 0 4
+ password vty123
+ login
+
+end
+copy running-config startup-config
+
+
+! ========================================
+! SWITCH
+! ========================================
+enable
+configure terminal
+hostname SW1
+no ip domain-lookup
+enable secret cisco123
+
+vlan 10
+ name Administratif
+
+vlan 20
+ name Technique
+
+interface GigabitEthernet0/1
+ description Trunk vers R3
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+ no shutdown
+
+interface FastEthernet0/2
+ description PC1 - VLAN 10
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+ no shutdown
+
+interface FastEthernet0/3
+ description PC2 - VLAN 20
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree portfast
+ no shutdown
+
+line console 0
+ password console123
+ login
+ logging synchronous
+
+line vty 0 15
+ password vty123
+ login
+
+end
+copy running-config startup-config
+
+
+! ========================================
+! CONFIGURATION PCs
+! ========================================
+! PC1 (VLAN 10):
+! IP: 192.168.10.10
+! Masque: 255.255.255.0
+! Passerelle: 192.168.10.1
+
+! PC2 (VLAN 20):
+! IP: 192.168.20.10
+! Masque: 255.255.255.0
+! Passerelle: 192.168.20.1
